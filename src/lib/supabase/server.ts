@@ -1,43 +1,33 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getPublicSupabaseConfig } from './env';
 import type { User } from '@/types/database.types';
 
+/** Cookie-based Supabase client for Server Components and legacy call sites. */
 export async function createClient() {
+  const { url, publishableKey } = getPublicSupabaseConfig();
   const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Called from Server Component — ignore
-          }
-        },
+  return createServerClient(url, publishableKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options),
+          );
+        } catch {
+          // Server Components cannot write cookies.
+        }
+      },
+    },
+  });
 }
 
+/** @deprecated Prefer `getCurrentUserProfile()` from `@/lib/supabase/context`. */
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-
-  if (!authUser) return null;
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', authUser.id)
-    .single();
-
-  return profile;
+  const { getCurrentUserProfile } = await import('./context');
+  return getCurrentUserProfile();
 }

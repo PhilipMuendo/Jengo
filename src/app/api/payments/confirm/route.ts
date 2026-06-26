@@ -1,46 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 import { paymentSchema } from '@/lib/validations/payment.schema';
 
-export async function POST(request: NextRequest) {
+export const POST = withSupabaseRoute({ auth: 'user' }, async (req, ctx) => {
   try {
-    const user = await getCurrentUser();
-    if (!user || !['owner', 'property_manager'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: profile } = await ctx.supabase
+      .from('users')
+      .select('role')
+      .eq('id', ctx.userClaims!.id)
+      .single();
+
+    if (!profile || !['owner', 'property_manager'].includes(profile.role)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const result = paymentSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+      return Response.json({ error: result.error.issues[0].message }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const { data: payment, error } = await supabase
+    const { data: payment, error } = await ctx.supabase
       .from('payments')
       .insert({
         ...result.data,
         status: 'confirmed',
         confirmed_at: new Date().toISOString(),
-        confirmed_by: user.id,
+        confirmed_by: ctx.userClaims!.id,
       })
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return Response.json({ error: error.message }, { status: 500 });
     }
 
     if (result.data.invoice_id) {
-      await supabase
+      await ctx.supabase
         .from('invoices')
         .update({ status: 'paid' })
         .eq('id', result.data.invoice_id);
     }
 
-    return NextResponse.json({ data: payment });
+    return Response.json({ data: payment });
   } catch (error) {
     console.error('Confirm payment error:', error);
-    return NextResponse.json({ error: 'Failed to confirm payment' }, { status: 500 });
+    return Response.json({ error: 'Failed to confirm payment' }, { status: 500 });
   }
-}
+});

@@ -1,20 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-export async function POST(request: NextRequest) {
+export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
   try {
-    const body = await request.json();
+    const body = await req.json();
     const callback = body.Body?.stkCallback;
 
     if (!callback) {
-      return NextResponse.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+      return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' });
     }
 
     const resultCode = callback.ResultCode;
@@ -24,10 +16,8 @@ export async function POST(request: NextRequest) {
     const receiptNumber = metadata.find((i: { Name: string }) => i.Name === 'MpesaReceiptNumber')?.Value;
     const amount = metadata.find((i: { Name: string }) => i.Name === 'Amount')?.Value;
 
-    const supabase = getServiceClient();
-
     if (resultCode === 0) {
-      const { data: payment } = await supabase
+      const { data: payment } = await ctx.supabaseAdmin
         .from('payments')
         .update({
           status: 'confirmed',
@@ -40,21 +30,21 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (payment?.invoice_id) {
-        await supabase
+        await ctx.supabaseAdmin
           .from('invoices')
           .update({ status: 'paid' })
           .eq('id', payment.invoice_id);
       }
     } else {
-      await supabase
+      await ctx.supabaseAdmin
         .from('payments')
         .update({ status: 'failed' })
         .eq('transaction_id', checkoutRequestId);
     }
 
-    return NextResponse.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+    return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' });
   } catch (error) {
     console.error('M-Pesa callback error:', error);
-    return NextResponse.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+    return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' });
   }
-}
+});

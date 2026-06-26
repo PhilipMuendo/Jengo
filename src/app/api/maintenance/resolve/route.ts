@@ -1,20 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 
-export async function POST(request: NextRequest) {
+export const POST = withSupabaseRoute({ auth: 'user' }, async (req, ctx) => {
   try {
-    const user = await getCurrentUser();
-    if (!user || !['owner', 'property_manager', 'caretaker'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: profile } = await ctx.supabase
+      .from('users')
+      .select('role')
+      .eq('id', ctx.userClaims!.id)
+      .single();
+
+    if (!profile || !['owner', 'property_manager', 'caretaker'].includes(profile.role)) {
+      return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { requestId, resolutionNotes } = await request.json();
+    const { requestId, resolutionNotes } = await req.json();
     if (!requestId) {
-      return NextResponse.json({ error: 'requestId is required' }, { status: 400 });
+      return Response.json({ error: 'requestId is required' }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data, error } = await ctx.supabase
       .from('maintenance_requests')
       .update({
         status: 'resolved',
@@ -26,11 +29,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return Response.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    return Response.json({ data });
   } catch {
-    return NextResponse.json({ error: 'Failed to resolve maintenance request' }, { status: 500 });
+    return Response.json({ error: 'Failed to resolve maintenance request' }, { status: 500 });
   }
-}
+});

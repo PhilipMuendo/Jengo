@@ -32,7 +32,13 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Fill in your Supabase and M-Pesa credentials in `.env.local`.
+3. Fill in credentials from the Supabase dashboard **Connect** dialog:
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY` (server only — never expose to the browser)
+   - `SUPABASE_JWKS_URL` (JWT verification for `auth: "user"`)
+
+   Also set the matching `NEXT_PUBLIC_*` vars for client-side `@supabase/ssr`.
 
 4. Apply database migrations:
 
@@ -51,6 +57,26 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## API routes (`@supabase/server`)
+
+Route handlers use `withSupabaseRoute` from `@/lib/supabase/with-supabase-route`, which wraps `@supabase/server` and composes with `@supabase/ssr` for cookie-based sessions:
+
+```ts
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route'
+
+export const GET = withSupabaseRoute({ auth: 'user' }, async (_req, ctx) => {
+  const { data } = await ctx.supabase.from('buildings').select()
+  return Response.json(data)
+})
+```
+
+| Auth mode | Use case |
+|-----------|----------|
+| `"user"` | Authenticated routes (JWT from session cookie or `Authorization` header) |
+| `"none"` | Public/webhook routes — use `ctx.supabaseAdmin` for privileged writes |
+| `"secret"` | Server-to-server calls with `apikey` header |
+| `"publishable"` | Client-gated anonymous routes with publishable key |
 
 ### Owner Sign-Up Flow
 

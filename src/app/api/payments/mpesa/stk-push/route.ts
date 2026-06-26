@@ -1,29 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 import { mpesaPaymentSchema } from '@/lib/validations/payment.schema';
 import { initiateStkPush } from '@/services/payments/mpesa';
 
-export async function POST(request: NextRequest) {
+export const POST = withSupabaseRoute({ auth: 'user' }, async (req, ctx) => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
+    const body = await req.json();
     const result = mpesaPaymentSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+      return Response.json({ error: result.error.issues[0].message }, { status: 400 });
     }
 
     const { phone, amount, invoice_id, unit_id } = result.data;
-    const supabase = await createClient();
 
-    const { data: payment, error: paymentError } = await supabase
+    const { data: payment, error: paymentError } = await ctx.supabase
       .from('payments')
       .insert({
         invoice_id,
-        tenant_id: user.id,
+        tenant_id: ctx.userClaims!.id,
         unit_id,
         amount,
         method: 'mpesa',
@@ -33,7 +26,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (paymentError) {
-      return NextResponse.json({ error: paymentError.message }, { status: 500 });
+      return Response.json({ error: paymentError.message }, { status: 500 });
     }
 
     const stkResponse = await initiateStkPush({
@@ -43,7 +36,7 @@ export async function POST(request: NextRequest) {
       transactionDesc: `Rent payment - Invoice ${invoice_id.slice(0, 8)}`,
     });
 
-    await supabase
+    await ctx.supabase
       .from('payments')
       .update({
         transaction_id: stkResponse.checkoutRequestId,
@@ -51,7 +44,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', payment.id);
 
-    return NextResponse.json({
+    return Response.json({
       data: {
         checkoutRequestId: stkResponse.checkoutRequestId,
         merchantRequestId: stkResponse.merchantRequestId,
@@ -60,6 +53,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('STK Push error:', error);
-    return NextResponse.json({ error: 'Failed to initiate M-Pesa payment' }, { status: 500 });
+    return Response.json({ error: 'Failed to initiate M-Pesa payment' }, { status: 500 });
   }
-}
+});

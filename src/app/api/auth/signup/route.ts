@@ -1,31 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 import { signupAccountSchema, signupOrganizationSchema } from '@/lib/validations/auth.schema';
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-export async function POST(request: NextRequest) {
+export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
   try {
-    const body = await request.json();
+    const body = await req.json();
 
     const accountResult = signupAccountSchema.safeParse(body);
     const orgResult = signupOrganizationSchema.safeParse(body);
 
     if (!accountResult.success) {
-      return NextResponse.json({ error: accountResult.error.issues[0].message }, { status: 400 });
+      return Response.json({ error: accountResult.error.issues[0].message }, { status: 400 });
     }
     if (!orgResult.success) {
-      return NextResponse.json({ error: orgResult.error.issues[0].message }, { status: 400 });
+      return Response.json({ error: orgResult.error.issues[0].message }, { status: 400 });
     }
 
-    const supabase = getServiceClient();
-
-    const { data: org, error: orgError } = await supabase
+    const { data: org, error: orgError } = await ctx.supabaseAdmin
       .from('organizations')
       .insert({
         name: body.organizationName,
@@ -43,10 +33,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orgError) {
-      return NextResponse.json({ error: orgError.message }, { status: 500 });
+      return Response.json({ error: orgError.message }, { status: 500 });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await ctx.supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password,
       email_confirm: true,
@@ -59,11 +49,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      await supabase.from('organizations').delete().eq('id', org.id);
-      return NextResponse.json({ error: authError.message }, { status: 500 });
+      await ctx.supabaseAdmin.from('organizations').delete().eq('id', org.id);
+      return Response.json({ error: authError.message }, { status: 500 });
     }
 
-    await supabase.from('users').upsert({
+    await ctx.supabaseAdmin.from('users').upsert({
       id: authData.user.id,
       organization_id: org.id,
       email: body.email,
@@ -72,9 +62,9 @@ export async function POST(request: NextRequest) {
       role: 'owner',
     });
 
-    return NextResponse.json({ data: { organizationId: org.id, userId: authData.user.id } });
+    return Response.json({ data: { organizationId: org.id, userId: authData.user.id } });
   } catch (error) {
     console.error('Signup error:', error);
-    return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+    return Response.json({ error: 'Failed to create account' }, { status: 500 });
   }
-}
+});

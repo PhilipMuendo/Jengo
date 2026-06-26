@@ -1,0 +1,14 @@
+# Supabase local development
+# https://supabase.com/docs/guides/cli/config
+
+[functions.mpesa-stk-push]
+verify_jwt = false
+
+[functions.mpesa-callback]
+verify_jwt = false
+
+[functions.generate-invoices]
+verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false

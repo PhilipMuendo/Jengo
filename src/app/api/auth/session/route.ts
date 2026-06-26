@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server';
-import { createClient, getCurrentUser } from '@/lib/supabase/server';
+import { withSupabaseRoute } from '@/lib/supabase/with-supabase-route';
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ user: null });
-  }
-  return NextResponse.json({ user });
-}
+export const GET = withSupabaseRoute(
+  { auth: ['user', 'none'] },
+  async (_req, ctx) => {
+    if (ctx.authMode === 'none' || !ctx.userClaims) {
+      return Response.json({ user: null });
+    }
+
+    const { data: profile } = await ctx.supabase
+      .from('users')
+      .select('*')
+      .eq('id', ctx.userClaims.id)
+      .single();
+
+    return Response.json({ user: profile });
+  },
+);
