@@ -24,7 +24,7 @@ export function useNotices(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { notices, loading, error, refresh };

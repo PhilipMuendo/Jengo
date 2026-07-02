@@ -11,6 +11,8 @@ type ArrearsInvoice = Invoice & {
   units?: { unit_number: string } | null;
 };
 
+const now = Date.now();
+
 export default async function ArrearsPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
@@ -54,7 +56,7 @@ export default async function ArrearsPage() {
                 <tbody className="divide-y">
                   {invoices.map((inv) => {
                     const daysOverdue = Math.floor(
-                      (Date.now() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24)
+                      (now - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24)
                     );
                     return (
                       <tr key={inv.id} className="hover:bg-gray-50">

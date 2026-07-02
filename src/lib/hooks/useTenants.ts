@@ -23,7 +23,7 @@ export function useTenants(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { tenants, loading, error, refresh };

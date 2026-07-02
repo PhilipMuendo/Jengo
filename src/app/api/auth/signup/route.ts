@@ -33,7 +33,8 @@ export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
       .single();
 
     if (orgError) {
-      return Response.json({ error: orgError.message }, { status: 500 });
+      console.error('Organization creation error:', orgError);
+      return Response.json({ error: orgError.message || JSON.stringify(orgError) }, { status: 500 });
     }
 
     const { data: authData, error: authError } = await ctx.supabaseAdmin.auth.admin.createUser({
@@ -50,10 +51,11 @@ export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
 
     if (authError) {
       await ctx.supabaseAdmin.from('organizations').delete().eq('id', org.id);
-      return Response.json({ error: authError.message }, { status: 500 });
+      console.error('User creation error:', authError);
+      return Response.json({ error: authError.message || JSON.stringify(authError) }, { status: 500 });
     }
 
-    await ctx.supabaseAdmin.from('users').upsert({
+    const { error: userUpsertError } = await ctx.supabaseAdmin.from('users').upsert({
       id: authData.user.id,
       organization_id: org.id,
       email: body.email,
@@ -62,9 +64,14 @@ export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
       role: 'owner',
     });
 
+    if (userUpsertError) {
+      console.error('User upsert error:', userUpsertError);
+    }
+
     return Response.json({ data: { organizationId: org.id, userId: authData.user.id } });
   } catch (error) {
     console.error('Signup error:', error);
-    return Response.json({ error: 'Failed to create account' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+    return Response.json({ error: errorMessage || 'Failed to create account' }, { status: 500 });
   }
 });

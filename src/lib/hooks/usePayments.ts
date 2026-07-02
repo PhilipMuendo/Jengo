@@ -23,7 +23,7 @@ export function usePayments(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { payments, loading, error, refresh };

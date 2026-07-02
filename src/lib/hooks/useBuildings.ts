@@ -24,7 +24,7 @@ export function useBuildings(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { buildings, loading, error, refresh };

@@ -23,7 +23,7 @@ export function useMaintenance(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { requests, loading, error, refresh };

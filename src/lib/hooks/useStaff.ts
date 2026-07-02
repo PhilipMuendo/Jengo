@@ -24,7 +24,7 @@ export function useStaff(orgId?: string) {
   }, [orgId]);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { staff, loading, error, refresh };

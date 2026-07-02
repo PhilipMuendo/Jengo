@@ -21,7 +21,7 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   return { user, loading, refresh, isOwner: user?.role === 'owner' };
