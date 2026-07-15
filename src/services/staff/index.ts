@@ -14,6 +14,24 @@ export async function getStaff(orgId: string) {
   return data as User[];
 }
 
+export async function getStaffPage(
+  orgId: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: User[]; count: number }> {
+  const supabase = createClient();
+  const from = page * pageSize;
+  const { data, count, error } = await supabase
+    .from('users')
+    .select('*', { count: 'exact' })
+    .eq('organization_id', orgId)
+    .in('role', ['property_manager', 'caretaker'])
+    .order('full_name')
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return { rows: (data as User[]) ?? [], count: count ?? 0 };
+}
+
 export async function createStaffMember(orgId: string, input: StaffInput, password: string) {
   const supabase = createClient();
 

@@ -5,12 +5,19 @@ import { Plus } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { PaymentTable } from '@/components/payments/PaymentTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { usePayments } from '@/lib/hooks/usePayments';
+import { usePaginatedQuery } from '@/lib/hooks/usePaginatedQuery';
+import { getPaymentsPage } from '@/services/payments';
 
 export default function PaymentsPage() {
   const { user } = useAuth();
-  const { payments, loading } = usePayments(user?.organization_id);
+  const orgId = user?.organization_id;
+  const { items, loading, fetching, count, page, pageCount, pageSize, setPage } = usePaginatedQuery(
+    ['payments', orgId],
+    (p, s) => getPaymentsPage(orgId!, p, s),
+    !!orgId,
+  );
 
   if (!user) return null;
 
@@ -27,7 +34,15 @@ export default function PaymentsPage() {
         }
       />
       <div className="p-6">
-        <PaymentTable payments={payments} loading={loading} />
+        <PaymentTable payments={items} loading={loading} />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          count={count}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          busy={fetching}
+        />
       </div>
     </div>
   );

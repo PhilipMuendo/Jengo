@@ -1,31 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useSupabaseQuery } from '@/lib/hooks/useSupabaseQuery';
 import { getBuildings } from '@/services/buildings';
-import type { Building } from '@/types/database.types';
 
 export function useBuildings(orgId?: string) {
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    if (!orgId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getBuildings(orgId);
-      setBuildings(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load buildings');
-    } finally {
-      setLoading(false);
-    }
-  }, [orgId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refresh);
-  }, [refresh]);
-
-  return { buildings, loading, error, refresh };
+  const { data, loading, error, refresh } = useSupabaseQuery(
+    ['buildings', orgId],
+    () => getBuildings(orgId!),
+    !!orgId,
+  );
+  return { buildings: data ?? [], loading, error, refresh };
 }

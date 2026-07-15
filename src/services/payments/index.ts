@@ -18,6 +18,26 @@ export async function getPayments(orgId: string) {
   return data as PaymentWithRelations[];
 }
 
+export async function getPaymentsPage(
+  orgId: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: PaymentWithRelations[]; count: number }> {
+  const supabase = createClient();
+  const from = page * pageSize;
+  const { data, count, error } = await supabase
+    .from('payments')
+    .select(
+      '*, users!payments_tenant_id_fkey(full_name), units!inner(unit_number, buildings!inner(organization_id))',
+      { count: 'exact' },
+    )
+    .eq('units.buildings.organization_id', orgId)
+    .order('payment_date', { ascending: false })
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return { rows: (data as PaymentWithRelations[]) ?? [], count: count ?? 0 };
+}
+
 export async function getPaymentsByTenant(tenantId: string) {
   const supabase = createClient();
   const { data, error } = await supabase

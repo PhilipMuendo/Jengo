@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils/format';
 import { Card } from '@/components/ui/Card';
 import { Step1Account } from './steps/step-1-account';
 import { Step2Organization } from './steps/step-2-organization';
@@ -61,35 +62,60 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-xl mb-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="w-full max-w-lg animate-fade-in-up">
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-xl font-bold text-white shadow-sm">
             J
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Start your free trial</h1>
-          <p className="text-gray-500 mt-1">Manage your buildings with Jengo</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Start your free trial</h1>
+          <p className="mt-1 text-gray-500">Manage your buildings with Jengo</p>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                i <= step ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                {i + 1}
+        <div className="mb-8 flex items-center justify-center">
+          {STEPS.map((s, i) => {
+            const isComplete = i < step;
+            const isCurrent = i === step;
+            return (
+              <div key={s} className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-200',
+                      isComplete && 'bg-emerald-600 text-white',
+                      isCurrent && 'bg-emerald-600 text-white ring-4 ring-emerald-100',
+                      !isComplete && !isCurrent && 'bg-gray-200 text-gray-500'
+                    )}
+                  >
+                    {isComplete ? <Check className="h-4 w-4" /> : i + 1}
+                  </div>
+                  <span
+                    className={cn(
+                      'hidden text-sm transition-colors duration-200 sm:inline',
+                      i <= step ? 'font-medium text-gray-900' : 'text-gray-400'
+                    )}
+                  >
+                    {s}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div className="mx-3 h-px w-8 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className={cn(
+                        'h-full bg-emerald-600 transition-all duration-300 ease-out',
+                        i < step ? 'w-full' : 'w-0'
+                      )}
+                    />
+                  </div>
+                )}
               </div>
-              <span className={`text-sm hidden sm:inline ${i <= step ? 'text-gray-900' : 'text-gray-400'}`}>
-                {s}
-              </span>
-              {i < STEPS.length - 1 && <div className="w-8 h-px bg-gray-300" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <Card>
+        <Card padding="lg">
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
               {error}
             </div>
           )}
@@ -105,9 +131,9 @@ export default function SignUpPage() {
           )}
         </Card>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-emerald-600 hover:text-emerald-700 font-medium">
+          <Link href="/auth/login" className="font-medium text-emerald-600 transition-colors hover:text-emerald-700">
             Sign in
           </Link>
         </p>

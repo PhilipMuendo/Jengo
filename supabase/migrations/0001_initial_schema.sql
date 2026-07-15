@@ -2,16 +2,88 @@
 -- PostgreSQL (Supabase)
 
 -- ENUMS
-CREATE TYPE user_role AS ENUM ('owner', 'property_manager', 'tenant', 'caretaker');
-CREATE TYPE unit_status AS ENUM ('vacant', 'occupied', 'maintenance', 'reserved');
-CREATE TYPE payment_method AS ENUM ('mpesa', 'cash', 'bank', 'cheque');
-CREATE TYPE payment_status AS ENUM ('pending', 'confirmed', 'failed', 'refunded', 'partial');
-CREATE TYPE invoice_status AS ENUM ('pending', 'paid', 'overdue', 'cancelled');
-CREATE TYPE maintenance_status AS ENUM ('open', 'assigned', 'in_progress', 'resolved', 'cancelled');
-CREATE TYPE maintenance_priority AS ENUM ('low', 'medium', 'high', 'urgent');
-CREATE TYPE notice_type AS ENUM ('general', 'maintenance', 'payment', 'emergency');
-CREATE TYPE lease_status AS ENUM ('active', 'expired', 'terminated', 'pending');
-CREATE TYPE subscription_tier AS ENUM ('silver', 'gold', 'platinum');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'user_role'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE user_role AS ENUM ('owner', 'property_manager', 'tenant', 'caretaker');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'unit_status'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE unit_status AS ENUM ('vacant', 'occupied', 'maintenance', 'reserved');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'payment_method'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE payment_method AS ENUM ('mpesa', 'cash', 'bank', 'cheque');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'payment_status'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE payment_status AS ENUM ('pending', 'confirmed', 'failed', 'refunded', 'partial');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'invoice_status'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE invoice_status AS ENUM ('pending', 'paid', 'overdue', 'cancelled');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'maintenance_status'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE maintenance_status AS ENUM ('open', 'assigned', 'in_progress', 'resolved', 'cancelled');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'maintenance_priority'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE maintenance_priority AS ENUM ('low', 'medium', 'high', 'urgent');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'notice_type'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE notice_type AS ENUM ('general', 'maintenance', 'payment', 'emergency');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'lease_status'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE lease_status AS ENUM ('active', 'expired', 'terminated', 'pending');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'subscription_tier'
+      AND typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE subscription_tier AS ENUM ('silver', 'gold', 'platinum');
+  END IF;
+END $$;
 
 -- ORGANIZATIONS
 CREATE TABLE organizations (

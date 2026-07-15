@@ -5,12 +5,19 @@ import { Plus } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { UnitTable } from '@/components/units/UnitTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useUnits } from '@/lib/hooks/useUnits';
+import { usePaginatedQuery } from '@/lib/hooks/usePaginatedQuery';
+import { getUnitsPage } from '@/services/units';
 
 export default function UnitsPage() {
   const { user } = useAuth();
-  const { units, loading } = useUnits(user?.organization_id);
+  const orgId = user?.organization_id;
+  const { items, loading, fetching, count, page, pageCount, pageSize, setPage } = usePaginatedQuery(
+    ['units', orgId],
+    (p, s) => getUnitsPage(orgId!, p, s),
+    !!orgId,
+  );
 
   if (!user) return null;
 
@@ -18,7 +25,7 @@ export default function UnitsPage() {
     <div>
       <Topbar
         title="Units"
-        subtitle={`${units.length} total units`}
+        subtitle={`${count} total units`}
         role={user.role}
         actions={
           <Link href="/units/new">
@@ -27,7 +34,15 @@ export default function UnitsPage() {
         }
       />
       <div className="p-6">
-        <UnitTable units={units} loading={loading} />
+        <UnitTable units={items} loading={loading} />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          count={count}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          busy={fetching}
+        />
       </div>
     </div>
   );

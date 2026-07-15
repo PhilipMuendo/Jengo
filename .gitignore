@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local scratch / manual DB scripts (may contain credentials — do not commit)
+/tmp_create_user.js
+/create_trigger.sql
+/fix_trigger.sql
+/skills-lock.json
+
+# agent, editor, and supabase CLI local state
+/.agents/
+/.vscode/
+/supabase/.temp/

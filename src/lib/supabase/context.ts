@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import {
@@ -95,7 +96,13 @@ export async function createSupabaseContext(
   };
 }
 
-export async function getCurrentUserProfile() {
+/**
+ * Cached per-request: the layout and every page under it call this
+ * independently, and each call previously re-ran JWT verification plus a
+ * fresh `users` query. `cache()` dedupes those into a single lookup per
+ * request (React server components only — safe because this has no args).
+ */
+export const getCurrentUserProfile = cache(async () => {
   const { data: ctx, error } = await createSupabaseContext({ auth: 'user' });
   if (error || !ctx?.userClaims) return null;
 
@@ -106,4 +113,4 @@ export async function getCurrentUserProfile() {
     .single();
 
   return profile;
-}
+});

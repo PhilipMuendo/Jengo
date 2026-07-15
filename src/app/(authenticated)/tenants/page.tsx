@@ -5,12 +5,19 @@ import { Plus } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { TenantTable } from '@/components/tenants/TenantTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useTenants } from '@/lib/hooks/useTenants';
+import { usePaginatedQuery } from '@/lib/hooks/usePaginatedQuery';
+import { getTenantsPage } from '@/services/tenants';
 
 export default function TenantsPage() {
   const { user } = useAuth();
-  const { tenants, loading } = useTenants(user?.organization_id);
+  const orgId = user?.organization_id;
+  const { items, loading, fetching, count, page, pageCount, pageSize, setPage } = usePaginatedQuery(
+    ['tenants', orgId],
+    (p, s) => getTenantsPage(orgId!, p, s),
+    !!orgId,
+  );
 
   if (!user) return null;
 
@@ -18,7 +25,7 @@ export default function TenantsPage() {
     <div>
       <Topbar
         title="Tenants"
-        subtitle={`${tenants.length} registered tenants`}
+        subtitle={`${count} registered tenants`}
         role={user.role}
         actions={
           <Link href="/tenants/new">
@@ -27,7 +34,15 @@ export default function TenantsPage() {
         }
       />
       <div className="p-6">
-        <TenantTable tenants={tenants} loading={loading} />
+        <TenantTable tenants={items} loading={loading} />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          count={count}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          busy={fetching}
+        />
       </div>
     </div>
   );

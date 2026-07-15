@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { PaymentForm } from '@/components/payments/PaymentForm';
@@ -12,6 +13,7 @@ import type { PaymentInput } from '@/lib/validations/payment.schema';
 
 export default function RecordPaymentPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { tenants } = useTenants(user?.organization_id);
   const { toast } = useToast();
@@ -21,8 +23,8 @@ export default function RecordPaymentPage() {
   async function handleSubmit(data: PaymentInput) {
     await recordPayment(data, user!.id);
     toast('Payment recorded successfully', 'success');
+    await queryClient.invalidateQueries({ queryKey: ['payments'] });
     router.push('/payments');
-    router.refresh();
   }
 
   return (

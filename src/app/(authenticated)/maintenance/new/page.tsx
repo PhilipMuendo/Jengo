@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { MaintenanceForm } from '@/components/maintenance/MaintenanceForm';
@@ -12,6 +13,7 @@ import type { MaintenanceInput } from '@/lib/validations/maintenance.schema';
 
 export default function NewMaintenancePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { units } = useUnits(user?.organization_id);
   const { toast } = useToast();
@@ -24,8 +26,8 @@ export default function NewMaintenancePage() {
       reportedBy: user!.id,
     });
     toast('Maintenance request submitted', 'success');
+    await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     router.push(user!.role === 'tenant' ? '/tenant/portal' : '/maintenance');
-    router.refresh();
   }
 
   return (

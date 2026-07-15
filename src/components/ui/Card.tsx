@@ -4,13 +4,24 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  interactive?: boolean;
+  style?: React.CSSProperties;
 }
 
 const paddingMap = { none: '', sm: 'p-4', md: 'p-6', lg: 'p-8' };
 
-export function Card({ children, className, padding = 'md' }: CardProps) {
+export function Card({ children, className, padding = 'md', interactive = false, style }: CardProps) {
   return (
-    <div className={cn('rounded-xl border border-gray-200 bg-white shadow-sm', paddingMap[padding], className)}>
+    <div
+      style={style}
+      className={cn(
+        'rounded-xl border border-gray-200 bg-white shadow-sm',
+        interactive &&
+          'transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md',
+        paddingMap[padding],
+        className
+      )}
+    >
       {children}
     </div>
   );

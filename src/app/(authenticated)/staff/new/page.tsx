@@ -1,6 +1,7 @@
 'use client';
 
 import { redirect, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { StaffForm } from '@/components/staff/StaffForm';
@@ -11,6 +12,7 @@ import type { StaffInput } from '@/lib/validations/staff.schema';
 
 export default function NewStaffPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
@@ -22,8 +24,8 @@ export default function NewStaffPage() {
   async function handleSubmit(data: StaffInput, password: string) {
     await createStaffMember(user!.organization_id, data, password);
     toast('Staff member added', 'success');
+    await queryClient.invalidateQueries({ queryKey: ['staff'] });
     router.push('/staff');
-    router.refresh();
   }
 
   return (

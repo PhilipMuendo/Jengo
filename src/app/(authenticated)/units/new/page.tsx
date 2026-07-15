@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { UnitForm } from '@/components/units/UnitForm';
@@ -12,6 +13,7 @@ import type { UnitInput } from '@/lib/validations/unit.schema';
 
 export default function NewUnitPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { buildings } = useBuildings(user?.organization_id);
   const { toast } = useToast();
@@ -21,8 +23,11 @@ export default function NewUnitPage() {
   async function handleSubmit(data: UnitInput) {
     await createUnit(data);
     toast('Unit created successfully', 'success');
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['units'] }),
+      queryClient.invalidateQueries({ queryKey: ['buildings'] }),
+    ]);
     router.push('/units');
-    router.refresh();
   }
 
   return (

@@ -18,6 +18,23 @@ export async function getMaintenanceRequests(orgId: string) {
   return data as MaintenanceWithRelations[];
 }
 
+export async function getMaintenancePage(
+  orgId: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: MaintenanceWithRelations[]; count: number }> {
+  const supabase = createClient();
+  const from = page * pageSize;
+  const { data, count, error } = await supabase
+    .from('maintenance_requests')
+    .select('*, units!inner(unit_number, buildings!inner(name, organization_id))', { count: 'exact' })
+    .eq('units.buildings.organization_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return { rows: (data as MaintenanceWithRelations[]) ?? [], count: count ?? 0 };
+}
+
 export async function getMaintenanceByTenant(tenantId: string) {
   const supabase = createClient();
   const { data, error } = await supabase

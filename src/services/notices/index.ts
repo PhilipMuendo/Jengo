@@ -23,6 +23,23 @@ export async function getNotices(orgId: string) {
   return data as (Notice & { buildings?: { name: string } | null })[];
 }
 
+export async function getNoticesPage(
+  orgId: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: (Notice & { buildings?: { name: string } | null })[]; count: number }> {
+  const supabase = createClient();
+  const from = page * pageSize;
+  const { data, count, error } = await supabase
+    .from('notices')
+    .select('*, buildings(name)', { count: 'exact' })
+    .eq('organization_id', orgId)
+    .order('published_at', { ascending: false })
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return { rows: (data as (Notice & { buildings?: { name: string } | null })[]) ?? [], count: count ?? 0 };
+}
+
 export async function createNotice(orgId: string, input: NoticeInput, createdBy?: string) {
   const supabase = createClient();
   const { data, error } = await supabase

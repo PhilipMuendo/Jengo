@@ -1,40 +1,38 @@
 import { Topbar } from '@/components/layout/Topbar';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
-import { OccupancyChart } from '@/components/dashboard/OccupancyChart';
+import { ChartsSection } from '@/components/dashboard/ChartsSection';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { AttentionItems } from '@/components/dashboard/AttentionItems';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { createClient } from '@/lib/supabase/server';
+import {
+  getDashboardData,
+  getRevenueTrend,
+  getRecentActivity,
+} from '@/services/dashboard';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   const supabase = await createClient();
+  const orgId = user!.organization_id;
 
-  const { count: buildingCount } = await supabase
-    .from('buildings')
-    .select('*', { count: 'exact', head: true })
-    .eq('organization_id', user!.organization_id);
+  const [dashboard, revenueData, activities] = await Promise.all([
+    getDashboardData(supabase, orgId),
+    getRevenueTrend(supabase, orgId),
+    getRecentActivity(supabase, orgId),
+  ]);
 
-  const { count: unitCount } = await supabase
-    .from('units')
-    .select('*, buildings!inner(organization_id)', { count: 'exact', head: true })
-    .eq('buildings.organization_id', user!.organization_id);
+  const { buildingCount, unitCount, occupancyRate, attention } = dashboard;
 
-  const { count: occupiedCount } = await supabase
-    .from('units')
-    .select('*, buildings!inner(organization_id)', { count: 'exact', head: true })
-    .eq('buildings.organization_id', user!.organization_id)
-    .eq('status', 'occupied');
-
-  const { data: recentPayments } = await supabase
-    .from('payments')
-    .select('amount')
-    .eq('status', 'confirmed')
-    .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-
-  const monthlyRevenue = recentPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-  const occupancyRate = unitCount ? Math.round(((occupiedCount || 0) / unitCount) * 100) : 0;
+  // Current-month revenue is the last trend bucket; month-over-month change
+  // is derived from the two most recent buckets.
+  const thisMonth = revenueData[revenueData.length - 1]?.revenue ?? 0;
+  const lastMonth = revenueData[revenueData.length - 2]?.revenue ?? 0;
+  const monthlyRevenue = thisMonth;
+  const revenueChange =
+    lastMonth > 0
+      ? `${thisMonth >= lastMonth ? '+' : ''}${Math.round(((thisMonth - lastMonth) / lastMonth) * 100)}%`
+      : undefined;
 
   return (
     <div>
@@ -43,23 +41,25 @@ export default async function DashboardPage() {
         subtitle="Portfolio overview"
         role={user!.role}
       />
-      <div className="p-6 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6">
         <StatsGrid
           stats={[
-            { label: 'Buildings', value: buildingCount || 0, change: '+0%' },
-            { label: 'Total Units', value: unitCount || 0, change: '+0%' },
-            { label: 'Occupancy', value: `${occupancyRate}%`, change: '+0%' },
-            { label: 'Monthly Revenue', value: monthlyRevenue, isCurrency: true, change: '+0%' },
+            { label: 'Buildings', value: buildingCount },
+            { label: 'Total Units', value: unitCount },
+            { label: 'Occupancy', value: `${occupancyRate}%` },
+            { label: 'Monthly Revenue', value: monthlyRevenue, isCurrency: true, change: revenueChange },
           ]}
         />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RevenueChart />
-          <OccupancyChart occupancyRate={occupancyRate} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AttentionItems />
-          <ActivityFeed />
-        </div>
+        <ChartsSection occupancyRate={occupancyRate} revenueData={revenueData} />
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Needs attention
+          </h2>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <AttentionItems summary={attention} />
+            <ActivityFeed activities={activities} />
+          </div>
+        </section>
       </div>
     </div>
   );

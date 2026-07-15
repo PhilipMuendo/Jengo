@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/layout/Topbar';
 import { Card } from '@/components/ui/Card';
 import { BuildingForm } from '@/components/buildings/BuildingForm';
@@ -11,6 +12,7 @@ import type { BuildingInput } from '@/lib/validations/building.schema';
 
 export default function NewBuildingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -19,8 +21,8 @@ export default function NewBuildingPage() {
   async function handleSubmit(data: BuildingInput) {
     await createBuilding(user!.organization_id, data);
     toast('Building created successfully', 'success');
+    await queryClient.invalidateQueries({ queryKey: ['buildings'] });
     router.push('/buildings');
-    router.refresh();
   }
 
   return (

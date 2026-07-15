@@ -5,14 +5,21 @@ import { Plus } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { MaintenanceTable } from '@/components/maintenance/MaintenanceTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useMaintenance } from '@/lib/hooks/useMaintenance';
+import { usePaginatedQuery } from '@/lib/hooks/usePaginatedQuery';
 import { useToast } from '@/lib/hooks/useToast';
-import { updateMaintenanceStatus } from '@/services/maintenance';
+import { getMaintenancePage, updateMaintenanceStatus } from '@/services/maintenance';
 
 export default function MaintenancePage() {
   const { user } = useAuth();
-  const { requests, loading, refresh } = useMaintenance(user?.organization_id);
+  const orgId = user?.organization_id;
+  const { items, loading, fetching, count, page, pageCount, pageSize, setPage, refresh } =
+    usePaginatedQuery(
+      ['maintenance', orgId],
+      (p, s) => getMaintenancePage(orgId!, p, s),
+      !!orgId,
+    );
   const { toast } = useToast();
 
   if (!user) return null;
@@ -33,7 +40,7 @@ export default function MaintenancePage() {
     <div>
       <Topbar
         title="Maintenance"
-        subtitle={`${requests.length} requests`}
+        subtitle={`${count} requests`}
         role={user.role}
         actions={
           <Link href="/maintenance/new">
@@ -43,9 +50,17 @@ export default function MaintenancePage() {
       />
       <div className="p-6">
         <MaintenanceTable
-          requests={requests}
+          requests={items}
           loading={loading}
           onStatusChange={canManage ? handleStatusChange : undefined}
+        />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          count={count}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          busy={fetching}
         />
       </div>
     </div>

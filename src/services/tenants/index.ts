@@ -18,6 +18,24 @@ export async function getTenants(orgId: string) {
   return data as TenantWithLease[];
 }
 
+export async function getTenantsPage(
+  orgId: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: TenantWithLease[]; count: number }> {
+  const supabase = createClient();
+  const from = page * pageSize;
+  const { data, count, error } = await supabase
+    .from('users')
+    .select('*, leases(*, units(unit_number, buildings(name)))', { count: 'exact' })
+    .eq('organization_id', orgId)
+    .eq('role', 'tenant')
+    .order('full_name')
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return { rows: (data as TenantWithLease[]) ?? [], count: count ?? 0 };
+}
+
 export async function createTenant(orgId: string, input: TenantInput, password: string) {
   const supabase = createClient();
 

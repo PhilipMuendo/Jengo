@@ -1,15 +1,33 @@
 -- Auth trigger: create user profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  metadata jsonb := COALESCE(NEW.raw_user_meta_data, NEW.user_metadata, '{}'::jsonb);
+  organization_id uuid;
+  user_role_value user_role := 'owner';
 BEGIN
+  IF metadata ? 'organization_id' THEN
+    organization_id := (metadata->>'organization_id')::uuid;
+  ELSE
+    RAISE EXCEPTION 'Missing organization_id in auth user metadata';
+  END IF;
+
+  IF metadata ? 'role' THEN
+    BEGIN
+      user_role_value := (metadata->>'role')::user_role;
+    EXCEPTION WHEN invalid_text_representation THEN
+      user_role_value := 'owner';
+    END;
+  END IF;
+
   INSERT INTO public.users (id, organization_id, email, phone, full_name, role)
   VALUES (
     NEW.id,
-    (NEW.raw_user_meta_data->>'organization_id')::UUID,
+    organization_id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'owner')
+    COALESCE(metadata->>'phone', ''),
+    COALESCE(metadata->>'full_name', NEW.email),
+    user_role_value
   );
   RETURN NEW;
 END;

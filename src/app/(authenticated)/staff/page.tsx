@@ -6,12 +6,19 @@ import { Plus } from 'lucide-react';
 import { Topbar } from '@/components/layout/Topbar';
 import { Button } from '@/components/ui/Button';
 import { StaffTable } from '@/components/staff/StaffTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useStaff } from '@/lib/hooks/useStaff';
+import { usePaginatedQuery } from '@/lib/hooks/usePaginatedQuery';
+import { getStaffPage } from '@/services/staff';
 
 export default function StaffPage() {
   const { user, loading: authLoading } = useAuth();
-  const { staff, loading } = useStaff(user?.organization_id);
+  const orgId = user?.organization_id;
+  const { items, loading, fetching, count, page, pageCount, pageSize, setPage } = usePaginatedQuery(
+    ['staff', orgId],
+    (p, s) => getStaffPage(orgId!, p, s),
+    !!orgId,
+  );
 
   if (authLoading) return null;
   if (user && user.role !== 'owner') redirect('/dashboard');
@@ -31,7 +38,15 @@ export default function StaffPage() {
         }
       />
       <div className="p-6">
-        <StaffTable staff={staff} loading={loading} />
+        <StaffTable staff={items} loading={loading} />
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          count={count}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          busy={fetching}
+        />
       </div>
     </div>
   );
