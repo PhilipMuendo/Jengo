@@ -92,7 +92,7 @@ export default function LandingPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-600">
             Jengo automates M-Pesa rent collection, invoicing, maintenance, and tenant
-            communication for high-rise residential buildings — from Kilimani to Mombasa.
+            communication for high-rise residential buildings — Across Kenya.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/auth/signup">
