@@ -62,6 +62,12 @@ export const POST = withSupabaseRoute({ auth: 'none' }, async (req, ctx) => {
         role: 'owner',
         organization_id: org.id,
       },
+      // Claims read by middleware for route gating without a DB round-trip.
+      app_metadata: {
+        role: 'owner',
+        organization_id: org.id,
+        is_active: true,
+      },
     });
 
     if (authError) {

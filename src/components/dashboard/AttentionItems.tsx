@@ -55,7 +55,7 @@ export function AttentionItems({ summary }: { summary: AttentionSummary }) {
       </CardHeader>
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-          <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+          <CheckCircle2 className="h-8 w-8 text-brand-500" />
           <p className="text-sm text-gray-500">All caught up — nothing needs attention.</p>
         </div>
       ) : (

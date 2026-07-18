@@ -60,7 +60,7 @@ export function MpesaPaymentForm({ invoice, onSuccess }: MpesaPaymentFormProps) 
       <CardDescription>Invoice {invoice.invoice_number} · {formatKES(invoice.amount)}</CardDescription>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         {errors.form && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{errors.form}</div>}
-        {message && <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">{message}</div>}
+        {message && <div className="rounded-lg bg-brand-50 border border-brand-200 px-4 py-3 text-sm text-brand-800">{message}</div>}
         <Input
           label="M-Pesa Phone Number"
           value={phone}

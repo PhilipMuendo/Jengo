@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
+import { ORG_FILTER, pageRange, toPage } from '@/services/shared';
+import type { Page } from '@/lib/hooks/usePaginatedQuery';
 import type { Payment } from '@/types/database.types';
 import type { PaymentInput } from '@/lib/validations/payment.schema';
 
@@ -7,35 +9,24 @@ export type PaymentWithRelations = Payment & {
   units?: { unit_number: string };
 };
 
-export async function getPayments(orgId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('payments')
-    .select('*, users!payments_tenant_id_fkey(full_name), units(unit_number, buildings!inner(organization_id))')
-    .eq('units.buildings.organization_id', orgId)
-    .order('payment_date', { ascending: false });
-  if (error) throw error;
-  return data as PaymentWithRelations[];
-}
-
 export async function getPaymentsPage(
   orgId: string,
   page: number,
   pageSize: number,
-): Promise<{ rows: PaymentWithRelations[]; count: number }> {
+): Promise<Page<PaymentWithRelations>> {
   const supabase = createClient();
-  const from = page * pageSize;
-  const { data, count, error } = await supabase
-    .from('payments')
-    .select(
-      '*, users!payments_tenant_id_fkey(full_name), units!inner(unit_number, buildings!inner(organization_id))',
-      { count: 'exact' },
-    )
-    .eq('units.buildings.organization_id', orgId)
-    .order('payment_date', { ascending: false })
-    .range(from, from + pageSize - 1);
-  if (error) throw error;
-  return { rows: (data as PaymentWithRelations[]) ?? [], count: count ?? 0 };
+  const [from, to] = pageRange(page, pageSize);
+  return toPage<PaymentWithRelations>(
+    await supabase
+      .from('payments')
+      .select(
+        '*, users!payments_tenant_id_fkey(full_name), units!inner(unit_number, buildings!inner(organization_id))',
+        { count: 'exact' },
+      )
+      .eq(ORG_FILTER.viaUnit, orgId)
+      .order('payment_date', { ascending: false })
+      .range(from, to),
+  );
 }
 
 export async function getPaymentsByTenant(tenantId: string) {

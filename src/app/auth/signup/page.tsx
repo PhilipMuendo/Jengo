@@ -65,7 +65,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-lg animate-fade-in-up">
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-xl font-bold text-white shadow-sm">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-xl font-bold text-white shadow-sm">
             J
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Start your free trial</h1>
@@ -82,8 +82,8 @@ export default function SignUpPage() {
                   <div
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-200',
-                      isComplete && 'bg-emerald-600 text-white',
-                      isCurrent && 'bg-emerald-600 text-white ring-4 ring-emerald-100',
+                      isComplete && 'bg-brand-600 text-white',
+                      isCurrent && 'bg-brand-600 text-white ring-4 ring-brand-100',
                       !isComplete && !isCurrent && 'bg-gray-200 text-gray-500'
                     )}
                   >
@@ -102,7 +102,7 @@ export default function SignUpPage() {
                   <div className="mx-3 h-px w-8 overflow-hidden rounded-full bg-gray-200">
                     <div
                       className={cn(
-                        'h-full bg-emerald-600 transition-all duration-300 ease-out',
+                        'h-full bg-brand-600 transition-all duration-300 ease-out',
                         i < step ? 'w-full' : 'w-0'
                       )}
                     />
@@ -133,7 +133,7 @@ export default function SignUpPage() {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link href="/auth/login" className="font-medium text-emerald-600 transition-colors hover:text-emerald-700">
+          <Link href="/auth/login" className="font-medium text-brand-600 transition-colors hover:text-brand-700">
             Sign in
           </Link>
         </p>

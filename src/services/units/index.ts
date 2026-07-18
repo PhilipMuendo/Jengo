@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
+import { ORG_FILTER, pageRange, toPage } from '@/services/shared';
+import type { Page } from '@/lib/hooks/usePaginatedQuery';
 import type { Unit } from '@/types/database.types';
 import type { UnitInput } from '@/lib/validations/unit.schema';
 
@@ -19,17 +21,17 @@ export async function getUnitsPage(
   orgId: string,
   page: number,
   pageSize: number,
-): Promise<{ rows: UnitWithBuilding[]; count: number }> {
+): Promise<Page<UnitWithBuilding>> {
   const supabase = createClient();
-  const from = page * pageSize;
-  const { data, count, error } = await supabase
-    .from('units')
-    .select('*, buildings!inner(name, organization_id)', { count: 'exact' })
-    .eq('buildings.organization_id', orgId)
-    .order('unit_number')
-    .range(from, from + pageSize - 1);
-  if (error) throw error;
-  return { rows: (data as UnitWithBuilding[]) ?? [], count: count ?? 0 };
+  const [from, to] = pageRange(page, pageSize);
+  return toPage<UnitWithBuilding>(
+    await supabase
+      .from('units')
+      .select('*, buildings!inner(name, organization_id)', { count: 'exact' })
+      .eq(ORG_FILTER.viaBuilding, orgId)
+      .order('unit_number')
+      .range(from, to),
+  );
 }
 
 export async function getUnitsByBuilding(buildingId: string) {

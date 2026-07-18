@@ -69,7 +69,7 @@ export default function ReportsPage() {
                       <span
                         className={cn(
                           'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                          isDanger ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                          isDanger ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'
                         )}
                       >
                         <Icon className="h-5 w-5" />

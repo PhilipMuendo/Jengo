@@ -76,7 +76,7 @@ export function MaintenanceForm({ units, defaultUnitId, onSubmit }: MaintenanceF
           value={form.description}
           onChange={(e) => updateField('description', e.target.value)}
           rows={4}
-          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
       </div>

@@ -16,10 +16,10 @@ export function BuildingCard({ building, occupiedUnits = 0 }: BuildingCardProps)
 
   return (
     <Link href={`/buildings/${building.id}`}>
-      <Card className="hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer h-full">
+      <Card className="hover:border-brand-300 hover:shadow-md transition-all cursor-pointer h-full">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
-            <Building2 className="h-5 w-5 text-emerald-700" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100">
+            <Building2 className="h-5 w-5 text-brand-700" />
           </div>
           <Badge variant={occupancy >= 80 ? 'green' : occupancy >= 50 ? 'yellow' : 'gray'}>
             {occupancy}% occupied

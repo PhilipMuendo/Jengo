@@ -34,7 +34,7 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
     <div>
       <Topbar title={building.name} subtitle={building.address} role={user!.role} />
       <div className="p-6 space-y-6">
-        <Link href="/buildings" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700">
+        <Link href="/buildings" className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700">
           <ArrowLeft className="h-4 w-4" /> Back to buildings
         </Link>
 
@@ -45,7 +45,7 @@ export default async function BuildingDetailPage({ params }: { params: Promise<{
           </Card>
           <Card>
             <p className="text-sm text-gray-500">Occupied</p>
-            <p className="text-2xl font-bold text-emerald-700">{occupied}</p>
+            <p className="text-2xl font-bold text-brand-700">{occupied}</p>
           </Card>
           <Card>
             <p className="text-sm text-gray-500">Floors</p>

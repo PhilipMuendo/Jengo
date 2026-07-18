@@ -28,7 +28,7 @@ export function StatsGrid({ stats }: { stats: Stat[] }) {
                 <span
                   className={cn(
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium',
-                    isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                    isPositive ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-700'
                   )}
                 >
                   <TrendIcon className="h-3 w-3" />

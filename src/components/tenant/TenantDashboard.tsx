@@ -76,7 +76,7 @@ export function TenantDashboard({
               {recentPayments.map((p) => (
                 <li key={p.id} className="flex justify-between text-sm">
                   <span className="text-gray-600">{formatDate(p.payment_date)}</span>
-                  <span className="font-medium text-emerald-700">{formatKES(p.amount)}</span>
+                  <span className="font-medium text-brand-700">{formatKES(p.amount)}</span>
                 </li>
               ))}
             </ul>

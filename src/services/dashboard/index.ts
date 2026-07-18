@@ -54,53 +54,35 @@ function monthLabel(dateStr: string): string {
 
 /**
  * Portfolio counts + attention summary in a single aggregate query
- * (migration 0003). Falls back to per-metric queries if not yet deployed.
+ * (`get_org_dashboard_summary`, migration 0004). Requires the migration to
+ * be deployed — RPC errors surface instead of silently degrading into
+ * fetch-every-row fallback queries.
  */
 export async function getDashboardData(
   supabase: ServerSupabase,
   orgId: string,
 ): Promise<DashboardData> {
   const { data, error } = await supabase.rpc('get_org_dashboard_summary', { p_org_id: orgId });
-  const row = (data as DashboardSummaryRow[] | null)?.[0];
-  if (!error && row) {
-    return {
-      buildingCount: row.building_count,
-      unitCount: row.unit_count,
-      occupiedCount: row.occupied_units,
-      occupancyRate: row.unit_count ? Math.round((row.occupied_units / row.unit_count) * 100) : 0,
-      attention: {
-        arrears: { count: row.overdue_tenants, total: Number(row.overdue_amount) },
-        expiringLeases: { count: row.expiring_leases },
-        maintenance: { open: row.open_maintenance, urgent: row.urgent_maintenance },
-      },
-    };
+  if (error) {
+    throw new Error(`get_org_dashboard_summary failed (is migration 0004 deployed?): ${error.message}`);
   }
+  const row = (data as DashboardSummaryRow[] | null)?.[0];
+  if (!row) throw new Error('get_org_dashboard_summary returned no rows');
 
-  const [{ count: buildingCount }, { data: units }, attention] = await Promise.all([
-    supabase.from('buildings').select('*', { count: 'exact', head: true }).eq('organization_id', orgId),
-    supabase
-      .from('units')
-      .select('status, buildings!inner(organization_id)')
-      .eq('buildings.organization_id', orgId),
-    getAttentionSummary(supabase, orgId),
-  ]);
-
-  const unitRows = (units ?? []) as { status: string }[];
-  const unitCount = unitRows.length;
-  const occupiedCount = unitRows.filter((u) => u.status === 'occupied').length;
   return {
-    buildingCount: buildingCount ?? 0,
-    unitCount,
-    occupiedCount,
-    occupancyRate: unitCount ? Math.round((occupiedCount / unitCount) * 100) : 0,
-    attention,
+    buildingCount: row.building_count,
+    unitCount: row.unit_count,
+    occupiedCount: row.occupied_units,
+    occupancyRate: row.unit_count ? Math.round((row.occupied_units / row.unit_count) * 100) : 0,
+    attention: {
+      arrears: { count: row.overdue_tenants, total: Number(row.overdue_amount) },
+      expiringLeases: { count: row.expiring_leases },
+      maintenance: { open: row.open_maintenance, urgent: row.urgent_maintenance },
+    },
   };
 }
 
-/**
- * Confirmed revenue bucketed by month for the last `months` months
- * (migration 0003). Falls back to a rows-and-bucket query if not deployed.
- */
+/** Confirmed revenue bucketed by month (`get_org_revenue_trend`, migration 0004). */
 export async function getRevenueTrend(
   supabase: ServerSupabase,
   orgId: string,
@@ -110,111 +92,11 @@ export async function getRevenueTrend(
     p_org_id: orgId,
     p_months: months,
   });
-  const rows = data as RevenueTrendRow[] | null;
-  if (!error && rows) {
-    return rows.map((r) => ({ month: monthLabel(r.month_start), revenue: Number(r.revenue) }));
+  if (error) {
+    throw new Error(`get_org_revenue_trend failed (is migration 0004 deployed?): ${error.message}`);
   }
-
-  const trendStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() - (months - 1),
-    1,
-  ).toISOString();
-  const { data: payments } = await supabase
-    .from('payments')
-    .select('amount, payment_date, units!inner(buildings!inner(organization_id))')
-    .eq('status', 'confirmed')
-    .eq('units.buildings.organization_id', orgId)
-    .gte('payment_date', trendStart);
-
-  return buildRevenueTrend(
-    (payments ?? []) as { amount: number | string; payment_date: string }[],
-    months,
-  );
-}
-
-/**
- * Buckets confirmed payments into the last `months` calendar months.
- * Pure function; also used as the fallback path for {@link getRevenueTrend}.
- */
-export function buildRevenueTrend(
-  payments: { amount: number | string; payment_date: string }[],
-  months = 6,
-): RevenuePoint[] {
-  const now = new Date();
-  const buckets: RevenuePoint[] = [];
-  const indexByKey = new Map<string, number>();
-
-  for (let i = months - 1; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    indexByKey.set(`${d.getFullYear()}-${d.getMonth()}`, buckets.length);
-    buckets.push({ month: d.toLocaleString('en-US', { month: 'short' }), revenue: 0 });
-  }
-
-  for (const p of payments) {
-    const d = new Date(p.payment_date);
-    const idx = indexByKey.get(`${d.getFullYear()}-${d.getMonth()}`);
-    if (idx !== undefined) buckets[idx].revenue += Number(p.amount);
-  }
-
-  return buckets;
-}
-
-interface OverdueInvoiceRow {
-  tenant_id: string;
-  amount: number | string;
-  late_fee: number | string | null;
-}
-
-interface MaintenanceRow {
-  priority: string;
-}
-
-export async function getAttentionSummary(
-  supabase: ServerSupabase,
-  orgId: string,
-): Promise<AttentionSummary> {
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const in30Str = new Date(today.getTime() + 30 * 86_400_000).toISOString().slice(0, 10);
-
-  const [overdue, leases, maintenance] = await Promise.all([
-    supabase
-      .from('invoices')
-      .select('tenant_id, amount, late_fee, units!inner(buildings!inner(organization_id))')
-      .eq('status', 'overdue')
-      .eq('units.buildings.organization_id', orgId),
-    supabase
-      .from('leases')
-      .select('id, units!inner(buildings!inner(organization_id))', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .gte('end_date', todayStr)
-      .lte('end_date', in30Str)
-      .eq('units.buildings.organization_id', orgId),
-    supabase
-      .from('maintenance_requests')
-      .select('priority, units!inner(buildings!inner(organization_id))')
-      .in('status', ['open', 'assigned', 'in_progress'])
-      .eq('units.buildings.organization_id', orgId),
-  ]);
-
-  const overdueRows = (overdue.data ?? []) as unknown as OverdueInvoiceRow[];
-  const maintenanceRows = (maintenance.data ?? []) as unknown as MaintenanceRow[];
-
-  const arrearsTenants = new Set(overdueRows.map((r) => r.tenant_id));
-  const arrearsTotal = overdueRows.reduce(
-    (sum, r) => sum + Number(r.amount) + Number(r.late_fee ?? 0),
-    0,
-  );
-
-  return {
-    arrears: { count: arrearsTenants.size, total: arrearsTotal },
-    expiringLeases: { count: leases.count ?? 0 },
-    maintenance: {
-      open: maintenanceRows.length,
-      urgent: maintenanceRows.filter((m) => m.priority === 'urgent').length,
-    },
-  };
+  const rows = (data as RevenueTrendRow[] | null) ?? [];
+  return rows.map((r) => ({ month: monthLabel(r.month_start), revenue: Number(r.revenue) }));
 }
 
 interface PaymentActivityRow {

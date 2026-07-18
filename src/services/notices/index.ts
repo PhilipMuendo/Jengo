@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
+import { ORG_FILTER, pageRange, toPage } from '@/services/shared';
+import type { Page } from '@/lib/hooks/usePaginatedQuery';
 import type { Notice, NoticeType } from '@/types/database.types';
 
 export interface NoticeInput {
@@ -12,32 +14,23 @@ export interface NoticeInput {
   expires_at?: string | null;
 }
 
-export async function getNotices(orgId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('notices')
-    .select('*, buildings(name)')
-    .eq('organization_id', orgId)
-    .order('published_at', { ascending: false });
-  if (error) throw error;
-  return data as (Notice & { buildings?: { name: string } | null })[];
-}
+export type NoticeWithBuilding = Notice & { buildings?: { name: string } | null };
 
 export async function getNoticesPage(
   orgId: string,
   page: number,
   pageSize: number,
-): Promise<{ rows: (Notice & { buildings?: { name: string } | null })[]; count: number }> {
+): Promise<Page<NoticeWithBuilding>> {
   const supabase = createClient();
-  const from = page * pageSize;
-  const { data, count, error } = await supabase
-    .from('notices')
-    .select('*, buildings(name)', { count: 'exact' })
-    .eq('organization_id', orgId)
-    .order('published_at', { ascending: false })
-    .range(from, from + pageSize - 1);
-  if (error) throw error;
-  return { rows: (data as (Notice & { buildings?: { name: string } | null })[]) ?? [], count: count ?? 0 };
+  const [from, to] = pageRange(page, pageSize);
+  return toPage<NoticeWithBuilding>(
+    await supabase
+      .from('notices')
+      .select('*, buildings(name)', { count: 'exact' })
+      .eq(ORG_FILTER.direct, orgId)
+      .order('published_at', { ascending: false })
+      .range(from, to),
+  );
 }
 
 export async function createNotice(orgId: string, input: NoticeInput, createdBy?: string) {

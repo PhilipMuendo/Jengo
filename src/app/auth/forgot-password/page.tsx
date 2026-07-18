@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
               {error && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
               <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               <Button type="submit" className="w-full" loading={loading}>Send Reset Link</Button>
-              <Link href="/auth/login" className="block text-center text-sm text-emerald-600 hover:text-emerald-700">Back to login</Link>
+              <Link href="/auth/login" className="block text-center text-sm text-brand-600 hover:text-brand-700">Back to login</Link>
             </form>
           )}
         </Card>

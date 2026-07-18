@@ -1,8 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { DoorOpen } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Table, THead, TH, TBody, TR, TD } from '@/components/ui/Table';
 import { UnitStatusBadge } from './UnitStatusBadge';
 import { formatKES } from '@/lib/utils/currency';
 import type { UnitWithBuilding } from '@/services/units';
@@ -16,7 +20,7 @@ export function UnitTable({ units, loading }: UnitTableProps) {
   if (loading) {
     return (
       <Card padding="none">
-        <div className="p-6 space-y-3">
+        <div className="space-y-3 p-6">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       </Card>
@@ -25,38 +29,43 @@ export function UnitTable({ units, loading }: UnitTableProps) {
 
   if (!units.length) {
     return (
-      <Card>
-        <p className="text-gray-500 text-center py-8">No units found. <Link href="/units/new" className="text-emerald-600 hover:underline">Add your first unit</Link></p>
+      <Card padding="none">
+        <EmptyState
+          icon={DoorOpen}
+          title="No units yet"
+          description="Add units to a building to start assigning tenants."
+          action={
+            <Link href="/units/new">
+              <Button size="sm">Add your first unit</Button>
+            </Link>
+          }
+        />
       </Card>
     );
   }
 
   return (
     <Card padding="none" className="overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Unit</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Building</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Bed/Bath</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Rent</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {units.map((unit) => (
-              <tr key={unit.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium text-gray-900">{unit.unit_number}</td>
-                <td className="px-6 py-4 text-gray-600">{unit.buildings?.name || '—'}</td>
-                <td className="px-6 py-4 text-gray-600">{unit.bedrooms}BR / {unit.bathrooms}BA</td>
-                <td className="px-6 py-4 text-gray-900">{formatKES(unit.rent_amount)}</td>
-                <td className="px-6 py-4"><UnitStatusBadge status={unit.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <THead>
+          <TH>Unit</TH>
+          <TH>Building</TH>
+          <TH>Bed/Bath</TH>
+          <TH>Rent</TH>
+          <TH>Status</TH>
+        </THead>
+        <TBody>
+          {units.map((unit) => (
+            <TR key={unit.id}>
+              <TD className="font-medium text-gray-900">{unit.unit_number}</TD>
+              <TD>{unit.buildings?.name || '—'}</TD>
+              <TD>{unit.bedrooms}BR / {unit.bathrooms}BA</TD>
+              <TD className="tabular-nums text-gray-900">{formatKES(unit.rent_amount)}</TD>
+              <TD><UnitStatusBadge status={unit.status} /></TD>
+            </TR>
+          ))}
+        </TBody>
+      </Table>
     </Card>
   );
 }

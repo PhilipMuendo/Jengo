@@ -29,7 +29,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const icons = { success: CheckCircle, error: AlertCircle, info: Info };
   const colors = {
-    success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+    success: 'bg-brand-50 border-brand-200 text-brand-800',
     error: 'bg-red-50 border-red-200 text-red-800',
     info: 'bg-blue-50 border-blue-200 text-blue-800',
   };

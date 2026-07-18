@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
+import { ORG_FILTER, pageRange, toPage } from '@/services/shared';
+import type { Page } from '@/lib/hooks/usePaginatedQuery';
 import type { MaintenanceRequest } from '@/types/database.types';
 import type { MaintenanceInput } from '@/lib/validations/maintenance.schema';
 
@@ -7,32 +9,21 @@ export type MaintenanceWithRelations = MaintenanceRequest & {
   users?: { full_name: string };
 };
 
-export async function getMaintenanceRequests(orgId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('maintenance_requests')
-    .select('*, units(unit_number, buildings!inner(name, organization_id))')
-    .eq('units.buildings.organization_id', orgId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data as MaintenanceWithRelations[];
-}
-
 export async function getMaintenancePage(
   orgId: string,
   page: number,
   pageSize: number,
-): Promise<{ rows: MaintenanceWithRelations[]; count: number }> {
+): Promise<Page<MaintenanceWithRelations>> {
   const supabase = createClient();
-  const from = page * pageSize;
-  const { data, count, error } = await supabase
-    .from('maintenance_requests')
-    .select('*, units!inner(unit_number, buildings!inner(name, organization_id))', { count: 'exact' })
-    .eq('units.buildings.organization_id', orgId)
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1);
-  if (error) throw error;
-  return { rows: (data as MaintenanceWithRelations[]) ?? [], count: count ?? 0 };
+  const [from, to] = pageRange(page, pageSize);
+  return toPage<MaintenanceWithRelations>(
+    await supabase
+      .from('maintenance_requests')
+      .select('*, units!inner(unit_number, buildings!inner(name, organization_id))', { count: 'exact' })
+      .eq(ORG_FILTER.viaUnit, orgId)
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  );
 }
 
 export async function getMaintenanceByTenant(tenantId: string) {

@@ -94,7 +94,7 @@ export default function SettingsPage() {
           <Card>
             <h3 className="font-semibold text-gray-900">Billing</h3>
             <p className="text-sm text-gray-500 mt-1">Manage your Jengo subscription</p>
-            <Link href="/settings/billing" className="inline-block mt-4 text-emerald-600 hover:text-emerald-700 text-sm font-medium">
+            <Link href="/settings/billing" className="inline-block mt-4 text-brand-600 hover:text-brand-700 text-sm font-medium">
               View billing →
             </Link>
           </Card>

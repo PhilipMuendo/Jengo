@@ -24,30 +24,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+  if (!user) return supabaseResponse;
 
-    const redirect = profile?.role ? ROLE_REDIRECTS[profile.role as UserRole] : '/dashboard';
-    return NextResponse.redirect(new URL(redirect, request.url));
-  }
+  // Role/is_active come from JWT app_metadata (stamped at account creation).
+  // Accounts created before the claims rollout fall back to one profile query.
+  let role = user.app_metadata?.role as UserRole | undefined;
+  let isActive = user.app_metadata?.is_active as boolean | undefined;
 
-  if (user && !isPublicRoute) {
+  if ((role === undefined || isActive === undefined) && (isAuthRoute || !isPublicRoute)) {
     const { data: profile } = await supabase
       .from('users')
       .select('role, is_active')
       .eq('id', user.id)
       .single();
+    role = role ?? (profile?.role as UserRole | undefined);
+    isActive = isActive ?? profile?.is_active;
+  }
 
-    if (!profile?.is_active) {
+  if (isAuthRoute) {
+    const redirect = role ? ROLE_REDIRECTS[role] : '/dashboard';
+    return NextResponse.redirect(new URL(redirect, request.url));
+  }
+
+  if (!isPublicRoute) {
+    if (isActive === false) {
       return NextResponse.redirect(new URL('/auth/login?error=inactive', request.url));
     }
 
-    if (profile?.role && !canAccessRoute(profile.role as UserRole, pathname)) {
-      return NextResponse.redirect(new URL(ROLE_REDIRECTS[profile.role as UserRole], request.url));
+    if (role && !canAccessRoute(role, pathname)) {
+      return NextResponse.redirect(new URL(ROLE_REDIRECTS[role], request.url));
     }
   }
 

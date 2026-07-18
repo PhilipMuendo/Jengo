@@ -1,8 +1,11 @@
 'use client';
 
+import { Wrench } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Table, THead, TH, TBody, TR, TD } from '@/components/ui/Table';
 import { MaintenanceStatusBadge } from './MaintenanceStatusBadge';
 import { MAINTENANCE_PRIORITIES, MAINTENANCE_STATUSES } from '@/lib/constants/statuses';
 import { formatDate, formatRelative } from '@/lib/utils/date';
@@ -18,7 +21,7 @@ export function MaintenanceTable({ requests, loading, onStatusChange }: Maintena
   if (loading) {
     return (
       <Card padding="none">
-        <div className="p-6 space-y-3">
+        <div className="space-y-3 p-6">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       </Card>
@@ -26,46 +29,53 @@ export function MaintenanceTable({ requests, loading, onStatusChange }: Maintena
   }
 
   if (!requests.length) {
-    return <Card><p className="text-gray-500 text-center py-8">No maintenance requests.</p></Card>;
+    return (
+      <Card padding="none">
+        <EmptyState
+          icon={Wrench}
+          title="No maintenance requests"
+          description="Requests reported by tenants or staff will show up here."
+        />
+      </Card>
+    );
   }
 
   return (
     <Card padding="none" className="overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Title</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Unit</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Priority</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Status</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-500">Reported</th>
-              {onStatusChange && <th className="text-left px-6 py-3 font-medium text-gray-500">Actions</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {requests.map((req) => {
-              const priority = MAINTENANCE_PRIORITIES[req.priority];
-              return (
-                <tr key={req.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{req.title}</div>
-                    <div className="text-xs text-gray-400 truncate max-w-xs">{req.description}</div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {req.units?.unit_number} · {req.units?.buildings?.name || ''}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant={priority.color as 'gray' | 'blue' | 'orange' | 'red'}>{priority.label}</Badge>
-                  </td>
-                  <td className="px-6 py-4"><MaintenanceStatusBadge status={req.status} /></td>
-                  <td className="px-6 py-4 text-gray-600" title={formatDate(req.created_at)}>
-                    {formatRelative(req.created_at)}
-                  </td>
-                  {onStatusChange && req.status !== 'resolved' && req.status !== 'cancelled' && (
-                    <td className="px-6 py-4">
+      <Table>
+        <THead>
+          <TH>Title</TH>
+          <TH>Unit</TH>
+          <TH>Priority</TH>
+          <TH>Status</TH>
+          <TH>Reported</TH>
+          {onStatusChange && <TH>Actions</TH>}
+        </THead>
+        <TBody>
+          {requests.map((req) => {
+            const priority = MAINTENANCE_PRIORITIES[req.priority];
+            const isClosed = req.status === 'resolved' || req.status === 'cancelled';
+            return (
+              <TR key={req.id}>
+                <TD>
+                  <div className="font-medium text-gray-900">{req.title}</div>
+                  <div className="max-w-xs truncate text-xs text-gray-400">{req.description}</div>
+                </TD>
+                <TD>{req.units?.unit_number} · {req.units?.buildings?.name || ''}</TD>
+                <TD>
+                  <Badge variant={priority.color as 'gray' | 'blue' | 'orange' | 'red'}>{priority.label}</Badge>
+                </TD>
+                <TD><MaintenanceStatusBadge status={req.status} /></TD>
+                <TD>
+                  <span title={formatDate(req.created_at)}>{formatRelative(req.created_at)}</span>
+                </TD>
+                {onStatusChange && (
+                  <TD>
+                    {isClosed ? (
+                      <span className="text-gray-400">—</span>
+                    ) : (
                       <select
-                        className="text-xs rounded border border-gray-300 px-2 py-1"
+                        className="rounded-lg border border-gray-300 px-2 py-1 text-xs shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                         value={req.status}
                         onChange={(e) => onStatusChange(req.id, e.target.value as MaintenanceWithRelations['status'])}
                       >
@@ -73,17 +83,14 @@ export function MaintenanceTable({ requests, loading, onStatusChange }: Maintena
                           <option key={value} value={value}>{label}</option>
                         ))}
                       </select>
-                    </td>
-                  )}
-                  {onStatusChange && (req.status === 'resolved' || req.status === 'cancelled') && (
-                    <td className="px-6 py-4 text-gray-400">—</td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    )}
+                  </TD>
+                )}
+              </TR>
+            );
+          })}
+        </TBody>
+      </Table>
     </Card>
   );
 }

@@ -36,7 +36,7 @@ export default function BillingPage() {
     <div>
       <Topbar title="Billing" subtitle="Subscription and plan details" role={user.role} />
       <div className="p-6 max-w-2xl space-y-6">
-        <Link href="/settings" className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700">
+        <Link href="/settings" className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700">
           <ArrowLeft className="h-4 w-4" /> Back to settings
         </Link>
 
@@ -46,7 +46,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>{tier.name} Plan</CardTitle>
-                  <p className="text-2xl font-bold text-emerald-700 mt-1">{formatKES(tier.price)}<span className="text-sm font-normal text-gray-500">/month</span></p>
+                  <p className="text-2xl font-bold text-brand-700 mt-1">{formatKES(tier.price)}<span className="text-sm font-normal text-gray-500">/month</span></p>
                 </div>
                 <Badge variant={org.subscription_status === 'active' ? 'green' : 'yellow'}>
                   {org.subscription_status}

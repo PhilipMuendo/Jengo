@@ -37,7 +37,7 @@ export function Step3Billing({ data, onUpdate, onComplete, onBack, loading }: Pr
               onClick={() => onUpdate({ tier })}
               className={cn(
                 'w-full rounded-xl border-2 p-4 text-left transition-colors',
-                isSelected ? 'border-emerald-600 bg-emerald-50' : 'border-gray-200 hover:border-gray-300'
+                isSelected ? 'border-brand-600 bg-brand-50' : 'border-gray-200 hover:border-gray-300'
               )}
             >
               <div className="flex items-center justify-between">
@@ -45,12 +45,12 @@ export function Step3Billing({ data, onUpdate, onComplete, onBack, loading }: Pr
                   <p className="font-semibold text-gray-900">{plan.name}</p>
                   <p className="text-sm text-gray-500">{formatKES(plan.price)}/month</p>
                 </div>
-                {isSelected && <Check className="h-5 w-5 text-emerald-600" />}
+                {isSelected && <Check className="h-5 w-5 text-brand-600" />}
               </div>
               <ul className="mt-3 space-y-1">
                 {tierFeatures[tier].map((f) => (
                   <li key={f} className="text-xs text-gray-600 flex items-center gap-1">
-                    <Check className="h-3 w-3 text-emerald-500" /> {f}
+                    <Check className="h-3 w-3 text-brand-500" /> {f}
                   </li>
                 ))}
               </ul>

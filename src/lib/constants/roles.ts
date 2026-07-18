@@ -24,5 +24,6 @@ export function canAccessRoute(role: string, route: string): boolean {
   };
 
   const allowed = routeMap[role] || [];
-  return allowed.some((r) => route.startsWith(r));
+  // Segment-aware match: '/tenant' must allow '/tenant/portal' but not '/tenants'.
+  return allowed.some((r) => route === r || route.startsWith(r + '/'));
 }
